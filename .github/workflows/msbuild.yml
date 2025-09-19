@@ -1,0 +1,39 @@
+name: build
+
+on: [pull_request, push]
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup devcmd
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build x86
+        run: |
+          msbuild foo_misc.sln /maxcpucount /p:Configuration=release /p:Platform=x86 /target:build
+
+      - name: Build x64
+        run: |
+          msbuild foo_misc.sln /maxcpucount /p:Configuration=release /p:Platform=x64 /target:build
+
+      - name: Prepare build artifacts
+        run: |
+          copy "Release\foo_misc.dll" "."
+          copy "x64\Release\foo_misc.dll" "x64"
+          7z a -tzip -mx9 "foo_misc.fb2k-component" "foo_misc.dll" "x64\foo_misc.dll"
+          $hash = (Get-FileHash -Algorithm SHA256 "foo_misc.fb2k-component").hash.ToString().toLower()
+          Write-Output "$hash *foo_misc.fb2k-component" > "foo_misc.fb2k-component.sha256"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: foo_misc component file
+          path: |
+            foo_misc.fb2k-component
+            foo_misc.fb2k-component.sha256
