@@ -159,7 +159,7 @@ namespace {
 			metadb_handle_ptr item;
 			if (playback_control_v3::get()->get_now_playing(item)) {
 				auto info = &item->get_full_info_ref(fb2k::noAbort)->info();
-				query << fb2k::formatTrackTitle(item, "[\"%artist%\" ][\"%title%\"]");
+				query << fb2k::formatTrackTitle(item, "[%artist% ][%title%]");
 			}
 
 			library_search_ui::get()->show(query.lowerCase());
