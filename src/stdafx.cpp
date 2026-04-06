@@ -57,3 +57,13 @@ bool clear_album_filter::apply_filter(metadb_handle_ptr p_location, t_filestats 
 	p_info.meta_remove_field("totaldiscs");
 	return true;
 }
+
+pfc::string clean_up(pfc::string in) {
+	in.replace_string("(", " ");
+	in.replace_string(")", " ");
+
+	pfc::string out;
+	out.convert_to_lower_ascii(in, ' ');
+
+	return out.toLower();
+}

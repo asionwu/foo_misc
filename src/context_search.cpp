@@ -121,16 +121,6 @@ namespace {
 			library_search_ui::get()->show(query);
 		}
 
-		pfc::string clean_up(pfc::string in) {
-			in.replace_string("(", " ");
-			in.replace_string(")", " ");
-
-			pfc::string out;
-			out.convert_to_lower_ascii(in, ' ');
-
-			return out.toLower();
-		}
-
 		void folderSearch(metadb_handle_list_cref p_data) {
 			auto dedups = extract_title_format(p_data, "$directory_path(%path%)");
 

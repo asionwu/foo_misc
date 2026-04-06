@@ -14,3 +14,5 @@ class clear_album_filter : public file_info_filter {
 public:
 	bool apply_filter(metadb_handle_ptr p_location, t_filestats p_stats, file_info& p_info);
 };
+
+pfc::string clean_up(pfc::string in);
