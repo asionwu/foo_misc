@@ -29,27 +29,14 @@ void set_clipboard(pfc::string in) {
 	CloseClipboard();
 }
 
+pfc::avltree_t<pfc::string> extract_title_format(metadb_handle_list_cref p_data, const char* script) {
+	pfc::avltree_t<pfc::string> out;
 
-pfc::string song_name(const file_info* info) {
-	auto artist = get_all_meta(info, "artist");
-	auto title = get_all_meta(info, "title");
-
-	pfc::string middle;
-	if (!artist.is_empty() && !title.is_empty()) {
-		middle = " ";
-	}
-
-	return artist << middle << title;
-}
-
-pfc::string get_all_meta(const file_info* info, const char* name) {
-	pfc::string_formatter out;
-
-	for (t_size i = 0; i < info->meta_get_count_by_name(name); ++i) {
-		if (i > 0) {
-			out.add_string(" ");
+	for (t_size i = 0; i < p_data.get_count(); ++i) {
+		auto fmt = fb2k::formatTrackTitle(p_data[i], script);
+		if (!fmt.is_empty()) {
+			out += fmt;
 		}
-		out.add_string(info->meta_get(name, i));
 	}
 
 	return out;
@@ -62,9 +49,21 @@ void clear_metadata(metadb_handle_list_cref p_data, service_ptr_t<file_info_filt
 bool clear_album_filter::apply_filter(metadb_handle_ptr p_location, t_filestats p_stats, file_info& p_info) {
 	p_info.meta_remove_field("album");
 	p_info.meta_remove_field("album artist");
+	p_info.meta_remove_field("track");
 	p_info.meta_remove_field("tracknumber");
 	p_info.meta_remove_field("totaltracks");
+	p_info.meta_remove_field("disc");
 	p_info.meta_remove_field("discnumber");
 	p_info.meta_remove_field("totaldiscs");
 	return true;
+}
+
+pfc::string clean_up(pfc::string in) {
+	in.replace_string("(", " ");
+	in.replace_string(")", " ");
+
+	pfc::string out;
+	out.convert_to_lower_ascii(in, ' ');
+
+	return out.toLower();
 }

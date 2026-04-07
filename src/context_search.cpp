@@ -15,7 +15,7 @@ namespace {
 			cmd_album,
 			cmd_date,
 			cmd_genre,
-			cmd_directory,
+			cmd_folder,
 			cmd_total
 		};
 
@@ -35,7 +35,7 @@ namespace {
 			case cmd_album: p_out = "Album"; break;
 			case cmd_date: p_out = "Date"; break;
 			case cmd_genre: p_out = "Genre"; break;
-			case cmd_directory: p_out = "Directory"; break;
+			case cmd_folder: p_out = "Folder"; break;
 			default: uBugCheck();
 			}
 		}
@@ -47,7 +47,7 @@ namespace {
 			static const GUID id_cmd_album = { 0x400144ef, 0xc0a9, 0x43e5, { 0x96, 0x64, 0x97, 0x9b, 0xa1, 0x85, 0xad, 0xbc } };
 			static const GUID id_cmd_date = { 0x7f0da23d, 0xb26, 0x4f76, { 0xad, 0x89, 0x79, 0x10, 0xb4, 0x11, 0xdd, 0xea } };
 			static const GUID id_cmd_genre = { 0x320fa698, 0x21dc, 0x4fd4, { 0xab, 0x0, 0x32, 0xf5, 0xfc, 0x6b, 0x23, 0x69 } };
-			static const GUID id_cmd_directory = { 0x68a09497, 0x3e65, 0x429d, { 0x9c, 0x1b, 0x57, 0xd7, 0xc1, 0x3d, 0x6a, 0xbb } };
+			static const GUID id_cmd_folder = { 0x68a09497, 0x3e65, 0x429d, { 0x9c, 0x1b, 0x57, 0xd7, 0xc1, 0x3d, 0x6a, 0xbb } };
 
 			switch (p_index) {
 			case cmd_song: return id_cmd_song;
@@ -56,7 +56,7 @@ namespace {
 			case cmd_album: return id_cmd_album;
 			case cmd_date: return id_cmd_date;
 			case cmd_genre: return id_cmd_genre;
-			case cmd_directory: return id_cmd_directory;
+			case cmd_folder: return id_cmd_folder;
 			default: uBugCheck();
 			}
 		}
@@ -69,7 +69,7 @@ namespace {
 			case cmd_album: p_out = "Searches the library for similar albums."; return true;
 			case cmd_date: p_out = "Searches the library for similar dates."; return true;
 			case cmd_genre: p_out = "Searches the library for similar genres."; return true;
-			case cmd_directory: p_out = "Searches the library for similar directories."; return true;
+			case cmd_folder: p_out = "Searches the library for similar folder."; return true;
 			default:
 				uBugCheck();
 			}
@@ -83,73 +83,54 @@ namespace {
 			case cmd_album: metaSearch(p_data, "album"); break;
 			case cmd_date: metaSearch(p_data, "date"); break;
 			case cmd_genre: metaSearch(p_data, "genre"); break;
-			case cmd_directory: dirSearch(p_data); break;
+			case cmd_folder: folderSearch(p_data); break;
 			default:
 				uBugCheck();
 			}
 		}
 
 		void songSearch(metadb_handle_list_cref p_data) {
+			auto dedups = extract_title_format(p_data, "[%artist% ][%title%]");
+
 			pfc::string_formatter query;
-
-			for (t_size i = 0; i < p_data.get_count(); ++i) {
-				const file_info* info = &p_data[i]->get_full_info_ref(fb2k::noAbort)->info();
-
-				auto song = song_name(info);
-				if (song.empty()) {
-					continue;
-				}
-
+			for (auto i = dedups.first(); i.is_valid(); ++i) {
 				if (!query.empty()) {
 					query.add_string(" OR ");
 				}
 
-				query << "* HAS " << song.lowerCase();
+				query << "* HAS " << clean_up(*i.get());
 			}
 
 			library_search_ui::get()->show(query);
 		}
 
 		void metaSearch(metadb_handle_list_cref p_data, const char* name) {
+			pfc::string_formatter script; script << "%" << name << "%";
+
+			auto dedups = extract_title_format(p_data, script);
+
 			pfc::string_formatter query;
-
-			for (t_size i = 0; i < p_data.get_count(); ++i) {
-				const file_info* info = &p_data[i]->get_full_info_ref(fb2k::noAbort)->info();
-
-				auto data = get_all_meta(info, name);
-				if (data.empty()) {
-					continue;
-				}
-
+			for (auto i = dedups.first(); i.is_valid(); ++i) {
 				if (!query.empty()) {
 					query.add_string(" OR ");
 				}
 
-				query << "%" << name << "% HAS " << data.lowerCase();
+				query << "%" << name << "% HAS " << clean_up(*i.get());
 			}
 
 			library_search_ui::get()->show(query);
 		}
 
-		void dirSearch(metadb_handle_list_cref p_data) {
+		void folderSearch(metadb_handle_list_cref p_data) {
+			auto dedups = extract_title_format(p_data, "$directory_path(%path%)");
+
 			pfc::string_formatter query;
-
-			for (t_size i = 0; i < p_data.get_count(); ++i) {
-				pfc::string path(p_data[i]->get_path());
-
-				auto fullDir = pfc::io::path::getDirectory(path);
-
-				if (pfc::io::path::isDirectoryRoot(fullDir)) {
-					continue;
-				}
-
+			for (auto i = dedups.first(); i.is_valid(); ++i) {
 				if (!query.empty()) {
 					query.add_string(" OR ");
 				}
 
-				auto parent = pfc::io::path::getParent(fullDir);
-
-				query << "%directory% HAS " << fullDir.subString(parent.length() + 1);
+				query << "%path% HAS " << *i;
 			}
 
 			library_search_ui::get()->show(query);

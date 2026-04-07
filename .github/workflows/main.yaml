@@ -1,15 +1,20 @@
-name: build
+name: main
 
-on: [pull_request, push]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
-    name: Build
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup devcmd
         uses: ilammy/msvc-dev-cmd@v1
@@ -27,13 +32,25 @@ jobs:
           copy "Release\foo_misc.dll" "."
           copy "x64\Release\foo_misc.dll" "x64"
           7z a -tzip -mx9 "foo_misc.fb2k-component" "foo_misc.dll" "x64\foo_misc.dll"
-          $hash = (Get-FileHash -Algorithm SHA256 "foo_misc.fb2k-component").hash.ToString().toLower()
-          Write-Output "$hash *foo_misc.fb2k-component" > "foo_misc.fb2k-component.sha256"
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v5
         with:
-          name: foo_misc component file
-          path: |
-            foo_misc.fb2k-component
-            foo_misc.fb2k-component.sha256
+          path: foo_misc.fb2k-component
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v6
+
+      - name: Tagger
+        uses: agukrapo/tagger@v0.6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          assets: foo_misc.fb2k-component

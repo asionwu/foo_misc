@@ -102,7 +102,7 @@ namespace {
 
 			pc->stop();
 
-			if (!recycle(item->get_path())) {
+			if (!recycle(fb2k::formatTrackTitle(item, "%path%"))) {
 				return;
 			}
 
@@ -116,12 +116,6 @@ namespace {
 
 		bool recycle(const char* path) {
 			std::string str(path);
-			if (str._Starts_with("file://")) {
-				str.erase(0, 7);
-			}
-			else if (str._Starts_with("file-relative://")) {
-				str.erase(0, 16);
-			}
 
 			CA2W ca2w(str.c_str());
 			std::wstring wstr = ca2w;
@@ -156,7 +150,7 @@ namespace {
 				return;
 			}
 
-			set_clipboard(song_name(&item->get_full_info_ref(fb2k::noAbort)->info()));
+			set_clipboard(fb2k::formatTrackTitle(item, "[%artist% ][%title%]"));
 		}
 
 		void exec_search_song() {
@@ -165,10 +159,10 @@ namespace {
 			metadb_handle_ptr item;
 			if (playback_control_v3::get()->get_now_playing(item)) {
 				auto info = &item->get_full_info_ref(fb2k::noAbort)->info();
-				query << song_name(info);
+				query << clean_up(fb2k::formatTrackTitle(item, "[%artist% ][%title%]"));
 			}
 
-			library_search_ui::get()->show(query);
+			library_search_ui::get()->show(query.lowerCase());
 		}
 
 		void exec_remove_album_md() {

@@ -84,20 +84,14 @@ namespace {
 		}
 
 		void titleformatCopy(metadb_handle_list_cref p_data, const char* script) {
-			pfc::avltree_t<pfc::string> dedups;
-			for (t_size i = 0; i < p_data.get_count(); ++i) {
-				auto fmt = fb2k::formatTrackTitle(p_data[i], script);
-				if (!fmt.is_empty()) {
-					dedups += fmt;
-				}
-			}
+			auto dedups = extract_title_format(p_data, script);
 
 			pfc::string_formatter data;
-			for (auto iter = dedups.first(); iter.is_valid(); ++iter) {
+			for (auto i = dedups.first(); i.is_valid(); ++i) {
 				if (!data.is_empty()) {
 					data << "\n";
 				}
-				data << *iter;
+				data << *i;
 			}
 
 			set_clipboard(data);

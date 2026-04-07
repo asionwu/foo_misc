@@ -9,9 +9,8 @@ namespace {
 	class clear_all_filter : public file_info_filter {
 	public:
 		bool apply_filter(metadb_handle_ptr p_location, t_filestats p_stats, file_info& p_info) {
-
-			auto artist = get_all_meta(&p_info, "artist");
-			auto title = get_all_meta(&p_info, "title");
+			auto artist = fb2k::formatTrackTitle(p_location, "[%artist%]");
+			auto title = fb2k::formatTrackTitle(p_location, "[%title%]");
 
 			p_info.meta_remove_all();
 			p_info.meta_set("artist", artist);
